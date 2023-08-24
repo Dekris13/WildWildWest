@@ -1,0 +1,100 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using Photon.Pun;
+using Photon.Realtime;
+using UnityEngine.SceneManagement;
+
+public class LobbyManager : MonoBehaviourPunCallbacks
+{
+    public InputField playerNameInput;
+    public InputField createLobbyInput;
+    public InputField joinLobbyInput;
+
+    [SerializeField] private Text PlayerName;
+    [SerializeField] private Text WaitForOtherPlayer;
+    [SerializeField] private Text RoomNotFond;
+    [SerializeField] private bool joinedRoom;
+    [SerializeField] private int PlayersCountInRoom;
+
+    void Start()
+    {
+        if (PlayerManager.PlayerName == "")
+        {
+
+        }
+        else
+        {
+            PlayerName.text = PlayerManager.PlayerName;
+        }
+    }
+
+    public void SetPlayerName()
+    {
+        string name = playerNameInput.text;
+        if (name == "")
+        {
+            name = RandomNameCreation();
+        }
+
+        PlayerManager.PlayerName = name;
+        PlayerName.text = name;
+    }
+    string RandomNameCreation()
+    {
+        string _name = new string("Player");
+        int nameRandom = (Random.Range(0, 500));
+        _name = _name  + nameRandom.ToString();
+        return _name;
+    }
+
+    public void CreateRoom()
+    {
+        if (PlayerName.text == "")
+        {
+            SetPlayerName();
+        }
+        RoomOptions roomOptions = new RoomOptions();
+        roomOptions.MaxPlayers = 2;
+        PhotonNetwork.CreateRoom(createLobbyInput.text, roomOptions);
+        WaitForOtherPlayer.text = "Ожидаем Вашего соперника";
+        RoomNotFond.text = "";
+    }
+
+    public void JoinRoom()
+    {
+        PhotonNetwork.JoinRoom(joinLobbyInput.text);
+    }
+    public override void OnJoinRoomFailed(short returnCode, string message)
+    {
+        RoomNotFond.text = "Дуэль с таким названием не найдена";
+        WaitForOtherPlayer.text = "";
+    }
+
+    public override void OnJoinedRoom()
+    {
+        int numOfPlayerInRoom = PhotonNetwork.CurrentRoom.PlayerCount;
+        PlayerManager.numOfPlayerInRoom = numOfPlayerInRoom;
+        RoomNotFond.text = "";
+        WaitForOtherPlayer.text = "Ожидаем Вашего соперника";
+        joinedRoom = true;
+    }
+
+    void Update()
+    {
+        if (joinedRoom)
+        {
+            PlayersCountInRoom = PhotonNetwork.CurrentRoom.PlayerCount;
+            if (PlayersCountInRoom == 2)
+            {
+                Effects.FadeScreen(Color.black, 0, 1, 0.3f, () => SceneManager.LoadScene("Game"));
+            }
+        }
+    }
+
+    public void Exit()
+    {
+        Application.Quit();
+    }
+}
