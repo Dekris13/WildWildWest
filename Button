@@ -1,0 +1,16 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class Button : MonoBehaviour, IPointerDownHandler
+{
+	public MainController _MainController;
+	[SerializeField] private int direction;
+
+	public void OnPointerDown(PointerEventData eventData)
+	{
+		_MainController.direction = direction;
+		_MainController.move = true;
+	}
+}
