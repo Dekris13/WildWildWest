@@ -1,0 +1,26 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Photon.Pun;
+
+public class SpawnerPlayer : MonoBehaviour
+{
+    [SerializeField] private List<GameObject> playersPref;
+    [SerializeField] private List<Vector2> playerStartPos;
+    [SerializeField] private List<string> playersName;
+
+    public int numOfPlayerInRoom;
+
+
+    void Start()
+    {
+        numOfPlayerInRoom = PlayerManager.numOfPlayerInRoom;
+        numOfPlayerInRoom--;
+
+        PhotonView photonView = PhotonNetwork.Instantiate(playersPref[numOfPlayerInRoom].name, playerStartPos[numOfPlayerInRoom], Quaternion.identity).GetComponent<PhotonView>();
+        photonView.transform.gameObject.GetComponent<Player>().playerName = PlayerManager.PlayerName;
+
+        string name = PlayerManager.PlayerName;
+        photonView.RPC("SetOpponentName", RpcTarget.All, name);
+    }
+}
