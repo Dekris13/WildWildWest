@@ -1,0 +1,204 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
+using Photon.Pun;
+
+public class MainController : MonoBehaviour
+{
+    [SerializeField] private SpawnerBullet _SpawnerBullet;
+    [SerializeField] public GameObject player;
+    [SerializeField] private List<GameObject> playersPref;
+    [SerializeField] private List<Vector2> playerStartPos;
+    [SerializeField] private List<Text> playersNamesText;
+    [SerializeField] private int bulletAvailable;
+    [SerializeField] private int bulletCount;
+    public List<GameObject> bulletPrefPool;
+    public GameObject bulletPref;
+    public GameObject startPointOfbullet;
+    [SerializeField] public GameObject FireButton;
+    [SerializeField] private bool reloadBool;
+    [SerializeField] private GameObject ReloadTimeInfo;
+    [SerializeField] private Text reloadTimeText;
+    [SerializeField] private float timer;
+    [SerializeField] private int reloadTimeLeft;
+    [SerializeField] private int reloadTime;
+    [SerializeField] private List<GameObject> bulletAvailableImage;
+
+
+    [SerializeField] private float speed;
+    [SerializeField] private List<Vector2> directionVar;
+    [SerializeField] public int direction;
+
+    public bool move;
+
+    public List<Text> PlayersCoinCountText;
+    public List<int> PlayersCoinCount;
+    public List<float> PlayersMaxHealth;
+    public List<float> PlayersCurHealth;
+    public List<Image> PlayershealthBar;
+    public float HpBar;
+
+    [SerializeField] private GameObject FinishGameMenu;
+    [SerializeField] private Text winLooseText;
+    [SerializeField] private Text playerName;
+    [SerializeField] private Text playerCoinCount;
+
+    public int numPlayer;
+
+
+    public void SetGameInfo(GameObject _player, int _numPlayer)
+    {
+        player = _player;
+        numPlayer = _numPlayer;
+        startPointOfbullet = player.transform.Find("Gun").gameObject;
+        playersNamesText[_numPlayer].text = PlayerManager.PlayerName;
+    }
+
+    public void SetOpponentInfo( int player, string name)
+    {
+        playersNamesText[player].text = name;
+    }
+
+    void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            Vector3 rotate = player.transform.eulerAngles;
+            switch (direction)
+            {
+                case 0:
+                    rotate.z = 90;
+                    break;
+                case 1:
+                    rotate.z = 0;
+                    break;
+                case 2:
+                    rotate.z = -90;
+                    break;
+                case 3:
+                    rotate.z = -180;
+                    break;
+            }
+            player.transform.rotation = Quaternion.Euler(rotate);
+        }
+        if (Input.GetMouseButtonUp(0))
+        {
+            move = false;
+        }
+    }
+
+    void FixedUpdate()
+    {
+        if (move)
+        {       
+            Vector2 pos = player.transform.position;
+            player.transform.position = pos + directionVar[direction] * speed / 50;
+        }
+        if (reloadBool)
+        {
+            timer += Time.deltaTime;
+            if (timer >= 1)
+            {
+                timer = 0;
+                reloadTimeLeft--;
+                reloadTimeText.text = reloadTimeLeft.ToString();
+                if (reloadTimeLeft <= 0)
+                {
+                    ReloadFire();
+                }
+            }
+        }
+    }
+
+    public void Fire()
+    {
+        Vector2 pos = startPointOfbullet.transform.position;
+        pos += directionVar[direction];
+        _SpawnerBullet.CreateBullet(pos, direction);
+        bulletAvailable--;
+        bulletAvailableImage[bulletAvailable].SetActive(false);
+        if (bulletAvailable == 0)
+        {
+            reloadTimeText.text = reloadTimeLeft.ToString();
+            ReloadTimeInfo.SetActive(true);
+            reloadTimeLeft = reloadTime;
+            timer = 0;
+            reloadBool = true;
+            FireButton.SetActive(false);
+        }
+    }
+    void ReloadFire()
+    {
+        ReloadTimeInfo.SetActive(false);
+        reloadTimeLeft = reloadTime;
+        reloadBool = false;
+        FireButton.SetActive(true);
+        bulletAvailable = bulletCount;
+        for (int i = 0; i < bulletAvailable; i++)
+        {
+            bulletAvailableImage[i].SetActive(true);
+        }
+    }
+
+    public void AddCoinCount(int player)
+    {
+        PlayersCoinCount[player]++;
+        PlayersCoinCountText[player].text = PlayersCoinCount[player].ToString();
+    }
+
+    public void ChangeHpBar(int _player, float _damage)
+    {
+        PlayersCurHealth[_player] -= _damage;
+        PlayershealthBar[_player].fillAmount = PlayersCurHealth[_player] / PlayersMaxHealth[_player];
+        if (PlayersCurHealth[_player] <= 0)
+        {
+            bool winner = new bool();
+            if (numPlayer == _player)
+            {
+                winner = false;
+            }
+            else
+            {
+                winner = true;
+            }
+            FinishGame(_player, winner);
+            Time.timeScale = 0;
+        }
+    }
+
+    void FinishGame(int loser, bool win)
+    {
+        int winner = new int();
+        FinishGameMenu.SetActive(true);
+        if (loser == 0)
+        {
+            winner = 1;
+        }
+        else
+        {
+            winner = 0;
+        }
+        if (win)
+        {
+            winLooseText.text = "Победа";
+            playerName.text = playersNamesText[winner].text;
+            playerCoinCount.text = PlayersCoinCount[winner].ToString();
+        }
+        else
+        {
+            winLooseText.text = "Поражение";
+            playerName.text = playersNamesText[loser].text;
+            playerCoinCount.text = PlayersCoinCount[loser].ToString();
+        }    
+    }
+
+    public void Lobby()
+    {
+        Time.timeScale = 1;
+        PhotonNetwork.LeaveRoom();
+        Effects.FadeScreen(Color.black, 0, 1, 0.3f, () => SceneManager.LoadScene("Loading"));
+    }
+}
