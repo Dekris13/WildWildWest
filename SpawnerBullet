@@ -1,0 +1,17 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Photon.Pun;
+using UnityEngine.UI;
+
+public class SpawnerBullet : MonoBehaviour
+{
+    public GameObject bulletPref;
+
+    public void CreateBullet(Vector2 pos, int dir)
+    {
+        PhotonView photonView = PhotonNetwork.Instantiate(bulletPref.name, pos, Quaternion.identity, 0).GetComponent<PhotonView>();
+        photonView.transform.gameObject.GetComponent<Bullet>().StartFlying(dir);
+        photonView.RPC("StartFlying", RpcTarget.All, dir);
+    }
+}
