@@ -1,0 +1,51 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Photon.Pun;
+
+public class Player : MonoBehaviour
+{
+    [SerializeField] private MainController _MainController;
+    [SerializeField] public string playerName;
+    [SerializeField] public int player;
+    [SerializeField] private float damage;
+    PhotonView view;
+
+    void Awake()
+    {
+        _MainController = Camera.main.GetComponent<MainController>();
+        view = GetComponent<PhotonView>();
+    }
+
+    void Start()
+    {
+        if (view.IsMine)
+        {
+            _MainController.SetGameInfo(gameObject, player);
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        GameObject GO = collision.gameObject;
+        if (GO.tag == "Coin")
+        {
+            _MainController.AddCoinCount(player);
+            Destroy(GO);
+            return;
+        }
+        if (GO.tag == "Bullet")
+        {
+            _MainController.ChangeHpBar(player, damage);
+            Destroy(GO);
+        }
+    }
+
+    [PunRPC]
+    void SetOpponentName(string name)
+    {
+        _MainController.SetOpponentInfo(player, name);
+        PlayerManager.OponentName = name;
+        playerName = name;
+    }
+}
